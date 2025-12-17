@@ -1,39 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
 using GymManagementBLL.ViewModels.TrainerViewModel;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
-using GymManagementDAL.Entities.Enum;
 
 namespace GymManagementBLL.Services.Classes
 {
     public class TrainerService : ITrainerService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public TrainerService(IUnitOfWork unitOfWork)
+        public TrainerService(IUnitOfWork unitOfWork,IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public IEnumerable<TrainerViewModel> GetAllTrainers()
         {
-            var trainers = _unitOfWork.GetRepository<Trainer>().GetAll();
+            var trainers = _unitOfWork.GetRepository<Trainer>().GetAll().ToList() ?? [];
 
             if (trainers is null || !trainers.Any()) return [];
 
-            var trainerViewModels = trainers.Select(x => new TrainerViewModel
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Email = x.Email,
-                Phone = x.Phone,
-                Specialities = x.Specialities.ToString(),
-            });
+            var trainerViewModels = _mapper.Map<IEnumerable<Trainer>,IEnumerable<TrainerViewModel>>(trainers);
 
             return trainerViewModels;
         }
@@ -44,16 +34,7 @@ namespace GymManagementBLL.Services.Classes
 
             if (trainer is null) return null;
 
-            var trainerViewModel = new TrainerViewModel
-            {
-                Id = trainer.Id,
-                Name = trainer.Name,
-                Email = trainer.Email,
-                Phone = trainer.Phone,
-                DateOfBirth = trainer.DateOfBirth.ToShortDateString(),
-                Specialities = trainer.Specialities.ToString(),
-                Address = FormatAddress(trainer.Address),
-            };
+            var trainerViewModel = _mapper.Map<TrainerViewModel>(trainer);
 
             return trainerViewModel;
         }
@@ -65,21 +46,7 @@ namespace GymManagementBLL.Services.Classes
                 if(IsEmailExists(model.Email) || IsPhoneExists(model.Phone))
                     return false;
 
-                var trainer = new Trainer
-                {
-                    Name = model.Name,
-                    Email = model.Email,
-                    Phone = model.Phone,
-                    DateOfBirth = model.DateOfBirth,
-                    Gender = model.Gender,
-                    Address = new Address
-                    {
-                        BuildingNumber = model.BuildingNumber,
-                        Street = model.Street,
-                        City = model.City,
-                    },
-                    Specialities = model.Specialities
-                };
+                var trainer = _mapper.Map<Trainer>(model);
 
                 _unitOfWork.GetRepository<Trainer>().Add(trainer);
 
@@ -99,15 +66,7 @@ namespace GymManagementBLL.Services.Classes
 
             if (trainer is null) return null;
 
-            var trainerToUpdate = new TrainerToUpdateViewModel
-            {
-                Email = trainer.Email,
-                Phone = trainer.Phone,
-                BuildingNumber = trainer.Address.BuildingNumber,
-                City = trainer.Address.City,
-                Street = trainer.Address.Street,
-                Specialities = trainer.Specialities.ToString()
-            };
+            var trainerToUpdate = _mapper.Map<TrainerToUpdateViewModel>(trainer);
 
             return trainerToUpdate;
         }
@@ -121,12 +80,7 @@ namespace GymManagementBLL.Services.Classes
             if (IsEmailExists(model.Email) || IsPhoneExists(model.Phone))
                 return false;
 
-            trainer.Email = model.Email;
-            trainer.Phone = model.Phone;
-            trainer.Address.BuildingNumber = model.BuildingNumber;
-            trainer.Address.Street = model.Street;
-            trainer.Address.City = model.City;
-            trainer.Specialities = (Specialities) Enum.Parse(typeof(Specialities),model.Specialities,true);
+            _mapper.Map(model,trainer);
 
             _unitOfWork.GetRepository<Trainer>().Update(trainer);
             _unitOfWork.SaveChanges();
@@ -154,15 +108,6 @@ namespace GymManagementBLL.Services.Classes
         }
 
         #region Helper Methods
-
-        private string FormatAddress(Address address)
-        {
-            if (address is null)
-                return "N/A";
-            else
-                return $"{address.BuildingNumber}, {address.Street}, {address.City}";
-        }
-
         private bool IsEmailExists(string email)
         {
             var existingMember = _unitOfWork.GetRepository<Trainer>().GetAll(x => x.Email == email);

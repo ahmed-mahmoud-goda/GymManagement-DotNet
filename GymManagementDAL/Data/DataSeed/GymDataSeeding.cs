@@ -30,7 +30,7 @@ namespace GymManagementDAL.Data.DataSeed
 
 				return context.SaveChanges() > 0;
             }
-			catch (Exception ex)
+			catch (Exception)
 			{
 				return false;
 			}
