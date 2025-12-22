@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GymManagementBLL.ViewModels.MemberViewModels
+namespace GymManagementBLL.ViewModels
 {
     public class HealthRecordViewModel
     {
