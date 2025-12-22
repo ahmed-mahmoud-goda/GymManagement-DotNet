@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GymManagementDAL.Entities.Enum;
 
-namespace GymManagementBLL.ViewModels.MemberViewModels
+namespace GymManagementBLL.ViewModels
 {
     public class CreateMemberViewModel
     {

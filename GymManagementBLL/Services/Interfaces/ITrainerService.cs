@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using GymManagementBLL.ViewModels.TrainerViewModel;
+using GymManagementBLL.ViewModels;
 
 namespace GymManagementBLL.Services.Interfaces
 {

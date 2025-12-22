@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
-using GymManagementBLL.ViewModels.PlanViewModels;
+using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
 

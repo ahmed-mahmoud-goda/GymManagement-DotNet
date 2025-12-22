@@ -24,11 +24,13 @@ namespace GymManagementPL
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
+            builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped<IServiceManager, ServiceManager>();
 
-            builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            builder.Services.AddAutoMapper(option=> { },AppDomain.CurrentDomain.GetAssemblies());
 
             var app = builder.Build();
 

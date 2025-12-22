@@ -15,6 +15,7 @@ namespace GymManagementBLL.Services.Classes
         private readonly Lazy<ITrainerService> trainerService;
         private readonly Lazy<IPlanService> planService;
         private readonly Lazy<ISessionService> sessionService;
+        private readonly Lazy<IAnalyticsService> analyticsService;
 
         public ServiceManager(IUnitOfWork unitOfWork, IMapper mapper)
         {
@@ -22,11 +23,13 @@ namespace GymManagementBLL.Services.Classes
             trainerService = new Lazy<ITrainerService>(() => new TrainerService(unitOfWork,mapper));
             planService = new Lazy<IPlanService>(() => new PlanService(unitOfWork,mapper));
             sessionService = new Lazy<ISessionService>(() => new SessionService(unitOfWork,mapper));
+            analyticsService = new Lazy<IAnalyticsService>(()=> new AnalyticsService(unitOfWork));
         }
 
         public IMemberService MemberService => memberService.Value;
         public ITrainerService TrainerService => trainerService.Value;
         public IPlanService PlanService => planService.Value;
         public ISessionService SessionService => sessionService.Value;
+        public IAnalyticsService AnalyticsService => analyticsService.Value;
     }
 }
