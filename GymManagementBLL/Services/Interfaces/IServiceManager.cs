@@ -15,5 +15,6 @@ namespace GymManagementBLL.Services.Interfaces
         public IPlanService PlanService { get; }
         public ISessionService SessionService { get; }
         public IAnalyticsService AnalyticsService { get; }
+        public IAccountService AccountService { get; }
     }
 }
