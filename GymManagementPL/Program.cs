@@ -5,6 +5,8 @@ using GymManagementDAL.Data.Contexts;
 using GymManagementDAL.Data.DataSeed;
 using GymManagementDAL.Data.Repositories.Classes;
 using GymManagementDAL.Data.Repositories.Interfaces;
+using GymManagementDAL.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,6 +32,8 @@ namespace GymManagementPL
 
             builder.Services.AddScoped<IServiceManager, ServiceManager>();
 
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<GymDbContext>();
+
             builder.Services.AddAutoMapper(option=> { },AppDomain.CurrentDomain.GetAssemblies());
 
             var app = builder.Build();
@@ -39,8 +43,11 @@ namespace GymManagementPL
             using var scope = app.Services.CreateScope();
 
             var gymDbContext = scope.ServiceProvider.GetRequiredService<GymDbContext>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
             GymDataSeeding.SeedData(gymDbContext);
+            IdentityDataSeeding.SeedData(roleManager,userManager);
 
             #endregion
 
@@ -55,12 +62,13 @@ namespace GymManagementPL
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}")
+                pattern: "{controller=Account}/{action=Login}/{id?}")
                 .WithStaticAssets();
 
             app.Run();
