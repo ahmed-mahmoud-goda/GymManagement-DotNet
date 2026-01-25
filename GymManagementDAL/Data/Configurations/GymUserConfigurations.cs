@@ -15,7 +15,7 @@ namespace GymManagementDAL.Data.Configurations
         {
             builder.Property(x => x.Name)
                 .HasColumnType("varchar")
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             builder.Property(x => x.Email)
                 .HasColumnType("varchar")
@@ -33,12 +33,12 @@ namespace GymManagementDAL.Data.Configurations
                 address.Property(a => a.City)
                 .HasColumnType("varchar")
                 .HasColumnName("City")
-                .HasMaxLength(30);
+                .HasMaxLength(100);
 
                 address.Property(a => a.Street)
                 .HasColumnType("varchar")
                 .HasColumnName("Street")
-                .HasMaxLength(30);
+                .HasMaxLength(150);
             });
 
             builder.HasIndex(x => x.Email).IsUnique();

@@ -5,13 +5,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using GymManagementDAL.Entities.Enum;
+using Microsoft.AspNetCore.Http;
 
 namespace GymManagementBLL.ViewModels
 {
     public class CreateMemberViewModel
     {
+        public IFormFile? PhotoFile { get; set; }
+
         [Required(ErrorMessage = "Name is required")]
         [RegularExpression(@"^[A-Za-z\s]+$",ErrorMessage ="Name must contain only letters and spaces")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters")]
         public string Name { get; set; } = null!;
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid Email Address")]

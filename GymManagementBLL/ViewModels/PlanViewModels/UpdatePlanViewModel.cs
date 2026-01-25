@@ -9,6 +9,8 @@ namespace GymManagementBLL.ViewModels
 {
     public class UpdatePlanViewModel
     {
+
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Plan Name must be between 2 and 100 characters")]
         public string PlanName { get; set; } = null!;
 
         [Required(ErrorMessage = "Description is required")]

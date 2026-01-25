@@ -1,9 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace GymManagementBLL.ViewModels
 {
     public class MemberToUpdateViewModel
     {
+        public IFormFile? PhotoFile { get; set; }
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters")]
         public string Name { get; set; } = null!;
         public string? Photo { get; set; }
         [Required(ErrorMessage = "Email is required")]

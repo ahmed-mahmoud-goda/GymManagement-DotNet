@@ -96,6 +96,17 @@ namespace GymManagementBLL.Services.Classes
             _unitOfWork.GetRepository<Session>().Delete(session);
             return _unitOfWork.SaveChanges() > 0;
         }
+        public IEnumerable<CategorySelectViewModel> GetCategoriesDropDown()
+        {
+            var categories = _unitOfWork.GetRepository<Category>().GetAll();
+            return _mapper.Map<IEnumerable<CategorySelectViewModel>>(categories);
+        }
+
+        public IEnumerable<TrainerSelectViewModel> GetTrainerDropDown()
+        {
+            var trainers = _unitOfWork.GetRepository<Trainer>().GetAll();
+            return _mapper.Map<IEnumerable<TrainerSelectViewModel>>(trainers);
+        }
 
         #region Helper Methods
 
@@ -131,7 +142,7 @@ namespace GymManagementBLL.Services.Classes
 
         private bool IsSessionAvailableForRemove(Session session)
         {
-            if (session is null || session.StartDate > DateTime.UtcNow || (session.StartDate <= DateTime.UtcNow && session.EndDate > DateTime.UtcNow))
+            if (session is null || (session.StartDate <= DateTime.UtcNow && session.EndDate > DateTime.UtcNow))
                 return false;
 
             var hasActiveBookings = _unitOfWork.SessionRepository.GetCountOfBookedSlots(session.Id) > 0;
@@ -140,6 +151,7 @@ namespace GymManagementBLL.Services.Classes
 
             return true;
         }
+
 
         #endregion
     }
