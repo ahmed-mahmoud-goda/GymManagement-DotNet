@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using GymManagementBLL.ViewModels.SessionViewModels;
+using GymManagementBLL.ViewModels;
 using GymManagementDAL.Entities;
 
 namespace GymManagementBLL.MappingProfiles
@@ -21,6 +21,10 @@ namespace GymManagementBLL.MappingProfiles
             CreateMap<CreateSessionViewModel, Session>();
 
             CreateMap<UpdateSessionViewModel, Session>().ReverseMap();
+
+            CreateMap<Category, CategorySelectViewModel>();
+
+            CreateMap<Trainer, TrainerSelectViewModel>();
         }
     }
 }

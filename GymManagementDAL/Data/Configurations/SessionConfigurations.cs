@@ -13,6 +13,10 @@ namespace GymManagementDAL.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Session> builder)
         {
+            builder.Property(x=>x.Description)
+                .HasColumnType("varchar")
+                .HasMaxLength(500);
+
             builder.HasOne(x => x.Trainer)
                 .WithMany(x => x.Sessions)
                 .HasForeignKey(x => x.TrainerId);

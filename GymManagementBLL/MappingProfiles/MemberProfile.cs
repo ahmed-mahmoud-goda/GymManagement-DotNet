@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
-using GymManagementBLL.ViewModels.MemberViewModels;
+using GymManagementBLL.ViewModels;
 using GymManagementDAL.Entities;
 
 namespace GymManagementBLL.MappingProfiles
@@ -34,7 +34,6 @@ namespace GymManagementBLL.MappingProfiles
             .ForMember(dest => dest.Street, opt => opt.MapFrom(src => src.Address.Street));
 
             CreateMap<MemberToUpdateViewModel, Member>()
-                .ForMember(dest => dest.Name, opt => opt.Ignore())
                 .ForMember(dest => dest.Photo, opt => opt.Ignore())
                 .AfterMap((src, dest) =>
                 {

@@ -8,6 +8,7 @@ using GymManagementBLL.Services.Interfaces;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -42,6 +43,8 @@ namespace GymManagementBLL.Services.Classes
                     return false;
 
                 var member = _mapper.Map<Member>(model);
+
+                member.Photo = GetPhoto(model.PhotoFile);
 
                 _unitOfWork.GetRepository<Member>().Add(member);
 
@@ -103,8 +106,16 @@ namespace GymManagementBLL.Services.Classes
 
             if(member is null) return false;
 
-            if (IsEmailExists(model.Email) || IsPhoneExists(model.Phone))
+            if (IsEmailExists(model.Email,memberId) || IsPhoneExists(model.Phone,memberId))
                 return false;
+
+            var newPhoto = GetPhoto(model.PhotoFile);
+
+            if (newPhoto != null)
+            {
+                DeletePhoto(member.Photo);
+                member.Photo = newPhoto;
+            }
 
             _mapper.Map(model, member);
 
@@ -135,6 +146,7 @@ namespace GymManagementBLL.Services.Classes
                 {
                     _unitOfWork.GetRepository<Membership>().DeleteRange(memberships);
                 }
+                DeletePhoto(member.Photo);
                 _unitOfWork.GetRepository<Member>().Delete(member);
                 _unitOfWork.SaveChanges();
 
@@ -148,15 +160,51 @@ namespace GymManagementBLL.Services.Classes
 
         #region Helper Methods
 
-        private bool IsEmailExists(string email)
+        private bool IsEmailExists(string email,int? id = null)
         {
-            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Email == email);
+            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Email == email && x.Id != id);
             return existingMember is not null && existingMember.Any();
         }
-        private bool IsPhoneExists(string phone)
+        private bool IsPhoneExists(string phone,int? id = null)
         {
-            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Phone == phone);
+            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Phone == phone && x.Id != id);
             return existingMember is not null && existingMember.Any();
+        }
+        private string? GetPhoto(IFormFile? file)
+        {
+            if (file == null || file.Length == 0)
+                return null;
+
+            string folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/members");
+            Directory.CreateDirectory(folder);
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            string ext = Path.GetExtension(file.FileName).ToLower();
+
+            if (!allowedExtensions.Contains(ext))
+                throw new Exception("Invalid file type");
+
+            string fileName = Guid.NewGuid() + ext;
+            string fullPath = Path.Combine(folder, fileName);
+
+            using var stream = new FileStream(fullPath, FileMode.Create);
+            file.CopyTo(stream);
+
+            return "/images/members/" + fileName;
+        }
+        private void DeletePhoto(string? photo)
+        {
+            if (string.IsNullOrEmpty(photo))
+                return;
+
+            string fullPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                photo.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)
+            );
+
+            if (File.Exists(fullPath))
+                File.Delete(fullPath);
         }
         #endregion
     }

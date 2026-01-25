@@ -1,0 +1,124 @@
+﻿@model MemberToUpdateViewModel
+@{
+    ViewData["Title"] = "Edit Member";
+}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form method="post" enctype="multipart/form-data">
+                <div class="card card-details border-0 p-2 shadow">
+                    <div class="card-body text-center">
+                        <div class="text-center mt-3 position-relative" style="display:inline-block; cursor:pointer;"
+                        onclick="triggerFileInput()">
+                            @if (string.IsNullOrEmpty(Model.Photo)){
+                                <img id="profilePhoto"
+                                src="~/images/user.png"
+                                alt="@Model.Name"
+                                class="rounded-circle"
+                                style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #fff; margin-top: -60px;" />
+                            }
+                            else
+                            {
+                                <img id="profilePhoto"
+                                     src="@Model.Photo"
+                                     alt="@Model.Name"
+                                     class="rounded-circle"
+                                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid #fff; margin-top: -60px;" />
+                            }
+                            <div class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle py-1 px-2">
+                            <i class="bi bi-pencil-fill"></i>
+                        </div>
+
+                        <input type="file" asp-for="PhotoFile" id="PhotoFileInput" name="PhotoFile" class="d-none" accept="image/*"
+                               onchange="previewPhoto(this)" />
+                    </div>
+
+                    <div class="card-body text-center">
+                        <h2 class="mb-1 text-primary-color semi">Name</h2>
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded">
+                                    <input asp-for="Name" class="form-control" />
+                                </div>
+                            </div>
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                            <div class="mt-4 text-start">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Email</small>
+                                            <input asp-for="Email" class="form-control" />
+                                            <span asp-validation-for="Email" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Phone</small>
+                                            <input asp-for="Phone" class="form-control" />
+                                            <span asp-validation-for="Phone" class="text-danger"></span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Building Number</small>
+                                            <input asp-for="BuildingNumber" class="form-control" />
+                                            <span asp-validation-for="BuildingNumber"
+                                                  class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">City</small>
+                                            <input asp-for="City" class="form-control" />
+                                            <span asp-validation-for="City" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 bg-light rounded">
+                                            <small class="text-muted d-block mb-1">Street</small>
+                                            <input asp-for="Street" class="form-control" />
+                                            <span asp-validation-for="Street" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="d-flex justify-content-between gap-2 mt-3 px-3 pb-3">
+                                <a asp-controller="Member" asp-action="Index" class="btn btn-fill ">
+                                    Back to
+                                    List
+                                </a>
+                                <button type="submit" class="btn btn-fill ">Done</button>
+                            </div>
+                    </div>
+                </div>
+
+            </div>
+           </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<script>
+    function triggerFileInput() {
+        document.getElementById('PhotoFileInput').click();
+    }
+
+    function previewPhoto(input) {
+        if (!input.files || input.files.length === 0) return;
+
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            document.getElementById('profilePhoto').src = e.target.result;
+        };
+
+        reader.readAsDataURL(file);
+    }
+</script>

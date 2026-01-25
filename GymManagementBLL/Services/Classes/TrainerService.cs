@@ -71,13 +71,13 @@ namespace GymManagementBLL.Services.Classes
             return trainerToUpdate;
         }
 
-        public bool UpdateTrainerDetails(TrainerToUpdateViewModel model,int trainerId)
+        public bool UpdateTrainerDetails(int trainerId, TrainerToUpdateViewModel model)
         {
             var trainer = _unitOfWork.GetRepository<Trainer>().GetById(trainerId);
 
             if(trainer is null) return false;
 
-            if (IsEmailExists(model.Email) || IsPhoneExists(model.Phone))
+            if (IsEmailExists(model.Email,trainerId) || IsPhoneExists(model.Phone, trainerId))
                 return false;
 
             _mapper.Map(model,trainer);
@@ -108,14 +108,14 @@ namespace GymManagementBLL.Services.Classes
         }
 
         #region Helper Methods
-        private bool IsEmailExists(string email)
+        private bool IsEmailExists(string email, int? id = null)
         {
-            var existingMember = _unitOfWork.GetRepository<Trainer>().GetAll(x => x.Email == email);
+            var existingMember = _unitOfWork.GetRepository<Trainer>().GetAll(x => x.Email == email && x.Id != id);
             return existingMember is not null && existingMember.Any();
         }
-        private bool IsPhoneExists(string phone)
+        private bool IsPhoneExists(string phone, int? id = null)
         {
-            var existingMember = _unitOfWork.GetRepository<Trainer>().GetAll(x => x.Phone == phone);
+            var existingMember = _unitOfWork.GetRepository<Trainer>().GetAll(x => x.Phone == phone && x.Id != id);
             return existingMember is not null && existingMember.Any();
         }
         #endregion
