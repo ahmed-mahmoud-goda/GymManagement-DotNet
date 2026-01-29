@@ -14,14 +14,14 @@ namespace GymManagementPL.Controllers
         {
             _serviceManager = serviceManager;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var members = _serviceManager.MemberService.GetAllMembers();
+            var members = await _serviceManager.MemberService.GetAllMembersAsync();
             return View(members);
         }
-        public IActionResult MemberDetails(int id)
+        public async Task<IActionResult> MemberDetails(int id)
         {
-            var member = _serviceManager.MemberService.GetMemberDetails(id);
+            var member = await _serviceManager.MemberService.GetMemberDetailsAsync(id);
             if (member is null)
             {
                 TempData["errorMessage"] = "Member Not Found";
@@ -29,9 +29,9 @@ namespace GymManagementPL.Controllers
             }
             return View(member);
         }
-        public IActionResult HealthRecordDetails(int id)
+        public async Task<IActionResult> HealthRecordDetails(int id)
         {
-            var member = _serviceManager.MemberService.GetMemberHealthRecord(id);
+            var member = await _serviceManager.MemberService.GetMemberHealthRecordAsync(id);
             if (member is null)
             {
                 TempData["errorMessage"] = "Member Not Found";
@@ -43,23 +43,23 @@ namespace GymManagementPL.Controllers
         {
             return View();
         }
-        public IActionResult CreateMember(CreateMemberViewModel input)
+        public async Task<IActionResult> CreateMember(CreateMemberViewModel input)
         {
             if (!ModelState.IsValid)
             {
                 ModelState.AddModelError("DataMissed", "Check Missing Data");
                 return View(nameof(Create),input);
             }
-            bool result = _serviceManager.MemberService.CreateMember(input);
+            bool result = await _serviceManager.MemberService.CreateMemberAsync(input);
             if (result)
                 TempData["successMessage"] = "Member Created Successfully";
             else
                 TempData["errorMessage"] = "Member Failed To Create, Phone Number Or Email Already Exist";
             return RedirectToAction(nameof(Index));
         }
-        public IActionResult MemberEdit(int id)
+        public async Task<IActionResult> MemberEdit(int id)
         {
-            var member = _serviceManager.MemberService.GetMemberToUpdate(id);
+            var member = await _serviceManager.MemberService.GetMemberToUpdateAsync(id);
             if(member is null)
             {
                 TempData["errorMessage"] = "Member Not Found";
@@ -69,14 +69,14 @@ namespace GymManagementPL.Controllers
             return View(member);
         }
         [HttpPost]
-        public IActionResult MemberEdit([FromRoute] int id, MemberToUpdateViewModel input)
+        public async Task<IActionResult> MemberEdit(int id, MemberToUpdateViewModel input)
         {
 
             if (!ModelState.IsValid)
             {
                 return View(input);
             }
-            var result = _serviceManager.MemberService.UpdateMemberDetails(id,input);
+            var result = await _serviceManager.MemberService.UpdateMemberDetailsAsync(id,input);
             if (result)
                 TempData["successMessage"] = "Member Updated Successfully";
             else
@@ -84,9 +84,9 @@ namespace GymManagementPL.Controllers
             return RedirectToAction(nameof(Index));
         }
         [HttpPost]
-        public IActionResult Delete([FromForm] int id)
+        public async Task<IActionResult> Delete([FromForm] int id)
         {
-            var result = _serviceManager.MemberService.RemoveMember(id);
+            var result = await _serviceManager.MemberService.RemoveMemberAsync(id);
             if (result)
                 TempData["successMessage"] = "Member Deleted Successfully";
             else

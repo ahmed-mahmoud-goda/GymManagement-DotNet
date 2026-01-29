@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
+using GymManagementBLL.Services.Specifications;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
@@ -21,64 +22,68 @@ namespace GymManagementBLL.Services.Classes
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        public IEnumerable<SessionViewModel> GetAllSessions()
+        public async Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync()
         {
-            var sessions = _unitOfWork.SessionRepository.GetAllSessionsWithTrainerAndCategory().OrderByDescending(x=>x.StartDate);
+            var sessionSpecs = new SessionWithFilterSpecification();
+            var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
 
             if (sessions is null || !sessions.Any())
                 return [];
-            
-            var mappedSessions = _mapper.Map<IEnumerable<Session>,IEnumerable<SessionViewModel>>(sessions);
 
-            foreach(var session in mappedSessions)
+            var mappedSessions = _mapper.Map<IEnumerable<SessionViewModel>>(sessions);
+
+            foreach (var session in mappedSessions)
             {
-                session.AvailableSlots = session.Capacity - _unitOfWork.SessionRepository.GetCountOfBookedSlots(session.Id);
+                var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
+                session.AvailableSlots = session.Capacity - await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs);
             }
 
             return mappedSessions;
         }
 
-        public SessionViewModel? GetSessionById(int sessionId)
+        public async Task<SessionViewModel?> GetSessionByIdAsync(int sessionId)
         {
-            var session = _unitOfWork.SessionRepository.GetSessionByIdWithTrainerAndCategory(sessionId);
+            var sessionSpecs = new SessionWithFilterSpecification(sessionId,true);
+            var session = await _unitOfWork.GetRepository<Session>().GetBySpecificationAsync(sessionSpecs);
 
             if (session is null)
                 return null;
 
             var mappedSessions = _mapper.Map<Session, SessionViewModel>(session);
 
-            mappedSessions.AvailableSlots = session.Capacity - _unitOfWork.SessionRepository.GetCountOfBookedSlots(session.Id);
+            var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
+            mappedSessions.AvailableSlots = session.Capacity - await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs);
 
             return mappedSessions;
         }
 
-        public bool CreateSession(CreateSessionViewModel input)
+        public async Task<bool> CreateSessionAsync(CreateSessionViewModel input)
         {
-            if (!IsTrainerExist(input.TrainerId) || !IsCategoryExist(input.CategoryId) || !IsValidDateRange(input.StartDate,input.EndDate))
+            if (!(await IsTrainerExist(input.TrainerId)) || !(await IsCategoryExist(input.CategoryId)) || !IsValidDateRange(input.StartDate, input.EndDate))
                 return false;
 
-            var session = _mapper.Map<CreateSessionViewModel,Session>(input);
-            _unitOfWork.GetRepository<Session>().Add(session);
-            return _unitOfWork.SaveChanges() > 0;
+            var session = _mapper.Map<CreateSessionViewModel, Session>(input);
+            await _unitOfWork.GetRepository<Session>().AddAsync(session);
+            return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
-        public bool UpdateSession(int id, UpdateSessionViewModel input)
+        public async Task<bool> UpdateSessionAsync(int id, UpdateSessionViewModel input)
         {
-            var session = _unitOfWork.GetRepository<Session>().GetById(id);
+            var session = await _unitOfWork.GetRepository<Session>().GetByIdAsync(id);
 
-            if (!IsSessionAvailableForUpdate(session) || !IsTrainerExist(input.TrainerId) || !IsValidDateRange(input.StartDate, input.EndDate))
+            if (!(await IsSessionAvailableForUpdate(session)) || !(await IsTrainerExist(input.TrainerId)) || !IsValidDateRange(input.StartDate, input.EndDate))
                 return false;
 
             _mapper.Map(input, session);
             session.UpdatedAt = DateTime.UtcNow;
 
             _unitOfWork.GetRepository<Session>().Update(session);
-            return _unitOfWork.SaveChanges() > 0;
+            return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
-        public UpdateSessionViewModel? GetSessionToUpdate(int id)
+        public async Task<UpdateSessionViewModel?> GetSessionToUpdateAsync(int id)
         {
-            var session = _unitOfWork.GetRepository<Session>().GetById(id);
+            var session = await _unitOfWork.GetRepository<Session>().GetByIdAsync(id);
 
             if (session is null)
                 return null;
@@ -86,39 +91,40 @@ namespace GymManagementBLL.Services.Classes
             return _mapper.Map<UpdateSessionViewModel>(session);
         }
 
-        public bool RemoveSession(int id)
+        public async Task<bool> RemoveSessionAsync(int id)
         {
-            var session = _unitOfWork.GetRepository<Session>().GetById(id);
+            var session = await _unitOfWork.GetRepository<Session>().GetByIdAsync(id);
 
-            if(!IsSessionAvailableForRemove(session))
+            if (!(await IsSessionAvailableForRemove(session)))
                 return false;
 
             _unitOfWork.GetRepository<Session>().Delete(session);
-            return _unitOfWork.SaveChanges() > 0;
+            return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
-        public IEnumerable<CategorySelectViewModel> GetCategoriesDropDown()
+        public async Task<IEnumerable<CategorySelectViewModel>> GetCategoriesDropDownAsync()
         {
-            var categories = _unitOfWork.GetRepository<Category>().GetAll();
+            var categories = await _unitOfWork.GetRepository<Category>().GetAllAsync();
             return _mapper.Map<IEnumerable<CategorySelectViewModel>>(categories);
         }
 
-        public IEnumerable<TrainerSelectViewModel> GetTrainerDropDown()
+        public async Task<IEnumerable<TrainerSelectViewModel>> GetTrainerDropDownAsync()
         {
-            var trainers = _unitOfWork.GetRepository<Trainer>().GetAll();
+            var trainers = await _unitOfWork.GetRepository<Trainer>().GetAllAsync();
             return _mapper.Map<IEnumerable<TrainerSelectViewModel>>(trainers);
         }
 
         #region Helper Methods
 
-        private bool IsTrainerExist(int trainerId)
+        private async Task<bool> IsTrainerExist(int trainerId)
         {
-            var trainer = _unitOfWork.GetRepository<Trainer>().GetById(trainerId);
+
+            var trainer = await _unitOfWork.GetRepository<Trainer>().GetByIdAsync(trainerId);
 
             return trainer is null ? false : true;
         }
-        private bool IsCategoryExist(int categoryId)
+        private async Task<bool> IsCategoryExist(int categoryId)
         {
-            var category = _unitOfWork.GetRepository<Category>().GetById(categoryId);
+            var category = await _unitOfWork.GetRepository<Category>().GetByIdAsync(categoryId);
 
             return category is null ? false : true;
         }
@@ -128,24 +134,26 @@ namespace GymManagementBLL.Services.Classes
             return endDate > startDate && startDate > DateTime.UtcNow;
         }
 
-        private bool IsSessionAvailableForUpdate(Session session)
+        private async Task<bool> IsSessionAvailableForUpdate(Session? session)
         {
-            if(session is null || session.EndDate < DateTime.UtcNow || session.StartDate <= DateTime.UtcNow)
+            if (session is null || session.EndDate < DateTime.UtcNow || session.StartDate <= DateTime.UtcNow)
                 return false;
 
-            var hasActiveBookings = _unitOfWork.SessionRepository.GetCountOfBookedSlots(session.Id) > 0;
+            var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
+            var hasActiveBookings = (await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs)) > 0;
             if (hasActiveBookings)
                 return false;
 
             return true;
         }
 
-        private bool IsSessionAvailableForRemove(Session session)
+        private async Task<bool> IsSessionAvailableForRemove(Session? session)
         {
             if (session is null || (session.StartDate <= DateTime.UtcNow && session.EndDate > DateTime.UtcNow))
                 return false;
 
-            var hasActiveBookings = _unitOfWork.SessionRepository.GetCountOfBookedSlots(session.Id) > 0;
+            var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
+            var hasActiveBookings = (await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs)) > 0;
             if (hasActiveBookings)
                 return false;
 

@@ -9,11 +9,11 @@ namespace GymManagementBLL.Services.Interfaces
 {
     public interface ITrainerService
     {
-        IEnumerable<TrainerViewModel> GetAllTrainers();
-        TrainerViewModel? GetTrainerDetails(int trainerId);
-        bool CreateTrainer(CreateTrainerViewModel model);
-        TrainerToUpdateViewModel? GetTrainerToUpdate(int trainerId);
-        bool UpdateTrainerDetails(int trainerId, TrainerToUpdateViewModel model);
-        bool RemoveTrainer(int trainerId);
+        Task<IEnumerable<TrainerViewModel>> GetAllTrainersAsync();
+        Task<TrainerViewModel?> GetTrainerDetailsAsync(int trainerId);
+        Task<bool> CreateTrainerAsync(CreateTrainerViewModel model);
+        Task<TrainerToUpdateViewModel?> GetTrainerToUpdateAsync(int trainerId);
+        Task<bool> UpdateTrainerDetailsAsync(int trainerId, TrainerToUpdateViewModel model);
+        Task<bool> RemoveTrainerAsync(int trainerId);
     }
 }

@@ -14,30 +14,40 @@ namespace GymManagementDAL.Data.Repositories.Classes
             _context = context;
         }
 
-        public void Add(TEntity entity) => _context.Add(entity);
-        
+        public IQueryable<TEntity> ApplyQuery(Specification<TEntity> specifications)
+            => SpecificationEvaluator.GetQuery(_context.Set<TEntity>(), specifications);
 
-        public void Delete(TEntity entity) => _context.Remove(entity);
-        
-
-        public void DeleteRange(IEnumerable<TEntity> entities) => _context.RemoveRange(entities);
-        
-
-        public IEnumerable<TEntity> GetAll(Func<TEntity, bool>? condition = null)
+        public async Task<IEnumerable<TEntity>> GetAllAsync(bool isTrackable = false)
         {
-            if(condition is not null)
+            if (isTrackable)
+                return await _context.Set<TEntity>().ToListAsync();
+
+            return await _context.Set<TEntity>().AsNoTracking().ToListAsync();
+        }
+        public async Task<IEnumerable<TEntity>> GetAllAsync(Specification<TEntity> specifications)
+            => await ApplyQuery(specifications).ToListAsync();
+
+        public async Task<TEntity?> GetByIdAsync(int id)
+            => await _context.Set<TEntity>().FindAsync(id);
+        public async Task<TEntity?> GetBySpecificationAsync(Specification<TEntity> specifications)
+            => await ApplyQuery(specifications).FirstOrDefaultAsync();
+
+        public async Task AddAsync(TEntity entity) => await _context.Set<TEntity>().AddAsync(entity);
+        public void Update(TEntity entity) => _context.Set<TEntity>().Update(entity);
+        public void Delete(TEntity entity) => _context.Set<TEntity>().Remove(entity);
+        public void DeleteRange(IEnumerable<TEntity> entities) => _context.Set<TEntity>().RemoveRange(entities);
+
+        public async Task<int> CountAsync(Specification<TEntity>? specifications = null)
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+
+            if (specifications != null)
             {
-                return _context.Set<TEntity>().AsNoTracking().Where(condition).ToList();
+                query = SpecificationEvaluator.GetQuery(query, specifications);
             }
-            else
-            {
-                return _context.Set<TEntity>().AsNoTracking().ToList();
-            }
+
+            return await query.CountAsync();
         }
 
-        public TEntity? GetById(int id) => _context.Set<TEntity>().Find(id);
-
-        public void Update(TEntity entity) => _context.Update(entity);
-        
     }
 }

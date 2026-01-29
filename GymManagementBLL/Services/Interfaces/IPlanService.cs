@@ -9,10 +9,10 @@ namespace GymManagementBLL.Services.Interfaces
 {
     public interface IPlanService
     {
-        bool UpdatePlan(int id, UpdatePlanViewModel input);
-        UpdatePlanViewModel? GetPlanToUpdate(int id);
-        IEnumerable<PlanViewModel> GetAllPlans();
-        PlanViewModel? GetPlanById(int id);
-        bool Activate(int planId);
+        Task<bool> UpdatePlanAsync(int id, UpdatePlanViewModel input);
+        Task<UpdatePlanViewModel?> GetPlanToUpdateAsync(int id);
+        Task<IEnumerable<PlanViewModel>> GetAllPlansAsync();
+        Task<PlanViewModel?> GetPlanByIdAsync(int id);
+        Task<bool> ActivateAsync(int planId);
     }
 }

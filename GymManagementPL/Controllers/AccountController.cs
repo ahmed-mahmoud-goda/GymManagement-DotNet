@@ -16,11 +16,11 @@ namespace GymManagementPL.Controllers
             _serviceManager = serviceManager;
             _signInManager = signInManager;
         }
-        public IActionResult login()
+        public async Task<IActionResult> login()
         {
             if (User.Identity.IsAuthenticated)
                 return RedirectToAction("Index", "Home");
-            var analytics = _serviceManager.AnalyticsService.GetAnalyticsData();
+            var analytics = await _serviceManager.AnalyticsService.GetAnalyticsDataAsync();
             ViewBag.Members = analytics.TotalMembers;
             ViewBag.Trainers = analytics.TotalTrainers;
             return View();

@@ -8,7 +8,6 @@ using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace GymManagementPL
 {
@@ -25,8 +24,6 @@ namespace GymManagementPL
             {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
-
-            builder.Services.AddScoped<ISessionRepository, SessionRepository>();
 
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 

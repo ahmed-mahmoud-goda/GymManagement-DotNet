@@ -19,6 +19,8 @@ namespace GymManagementBLL.Services.Classes
         private readonly Lazy<ISessionService> sessionService;
         private readonly Lazy<IAnalyticsService> analyticsService;
         private readonly Lazy<IAccountService> accountService;
+        private readonly Lazy<IMembershipService> membershipService;
+        private readonly Lazy<IBookingService> bookingService;
 
         public ServiceManager(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
         {
@@ -28,6 +30,8 @@ namespace GymManagementBLL.Services.Classes
             sessionService = new Lazy<ISessionService>(() => new SessionService(unitOfWork,mapper));
             analyticsService = new Lazy<IAnalyticsService>(()=> new AnalyticsService(unitOfWork));
             accountService = new Lazy<IAccountService>(() => new AccountService(userManager));
+            membershipService = new Lazy<IMembershipService>(() => new MembershipService(unitOfWork,mapper));
+            bookingService = new Lazy<IBookingService>(() => new BookingService(unitOfWork, mapper));
         }
 
         public IMemberService MemberService => memberService.Value;
@@ -36,5 +40,7 @@ namespace GymManagementBLL.Services.Classes
         public ISessionService SessionService => sessionService.Value;
         public IAnalyticsService AnalyticsService => analyticsService.Value;
         public IAccountService AccountService => accountService.Value;
+        public IMembershipService MembershipService => membershipService.Value;
+        public IBookingService BookingService => bookingService.Value;
     }
 }
