@@ -13,12 +13,10 @@ namespace GymManagementDAL.Data.Repositories.Classes
     {
         private readonly GymDbContext _context;
         private readonly Dictionary<string, object> repositories = [];
-        public ISessionRepository SessionRepository { get; set; }
 
-        public UnitOfWork(GymDbContext context, ISessionRepository sessionRepository)
+        public UnitOfWork(GymDbContext context)
         {
             _context = context;
-            SessionRepository = sessionRepository;
         }
 
 
@@ -36,6 +34,6 @@ namespace GymManagementDAL.Data.Repositories.Classes
             return repository;
         }
 
-        public int SaveChanges() => _context.SaveChanges();
+        public async Task<int> SaveChangesAsync() => await _context.SaveChangesAsync();
     }
 }

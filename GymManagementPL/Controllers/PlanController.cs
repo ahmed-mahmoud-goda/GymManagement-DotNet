@@ -1,4 +1,5 @@
-﻿using GymManagementBLL.Services.Interfaces;
+﻿using System.Threading.Tasks;
+using GymManagementBLL.Services.Interfaces;
 using GymManagementBLL.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,19 +15,19 @@ namespace GymManagementPL.Controllers
         {
             _serviceManager = serviceManager;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var plans =  _serviceManager.PlanService.GetAllPlans();
+            var plans = await _serviceManager.PlanService.GetAllPlansAsync();
             return View(plans);
         }
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)
             {
                 TempData["errorMessage"] = "Id Of Plan Can Not Be 0 Or Negative";
                 return RedirectToAction(nameof(Index));
             }
-            var plan = _serviceManager.PlanService.GetPlanById(id);
+            var plan = await _serviceManager.PlanService.GetPlanByIdAsync(id);
             if(plan == null)
             {
                 TempData["errorMessage"] = "Plan Not Found";
@@ -35,14 +36,14 @@ namespace GymManagementPL.Controllers
             return View(plan);
 
         }
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
             {
                 TempData["errorMessage"] = "Id Of Plan Can Not Be 0 Or Negative";
                 return RedirectToAction(nameof(Index));
             }
-            var plan = _serviceManager.PlanService.GetPlanToUpdate(id);
+            var plan = await _serviceManager.PlanService.GetPlanToUpdateAsync(id);
             if (plan == null)
             {
                 TempData["errorMessage"] = "Plan Can Not Be Updated";
@@ -51,13 +52,13 @@ namespace GymManagementPL.Controllers
             return View(plan);
         }
         [HttpPost]
-        public IActionResult Edit([FromRoute] int id, UpdatePlanViewModel input)
+        public async Task<IActionResult> Edit([FromRoute] int id, UpdatePlanViewModel input)
         {
             if (!ModelState.IsValid)
             {
                 return View(input);
             }
-            var result = _serviceManager.PlanService.UpdatePlan(id, input);
+            var result = await _serviceManager.PlanService.UpdatePlanAsync(id, input);
             if (result)
                 TempData["successMessage"] = "Plan Updated Successfully";
             else
@@ -66,13 +67,13 @@ namespace GymManagementPL.Controllers
             return RedirectToAction(nameof(Index));
         }
         [HttpPost]
-        public IActionResult Activate(int id)
+        public async Task<IActionResult> Activate(int id)
         {
-            var result = _serviceManager.PlanService.Activate(id);
+            var result = await _serviceManager.PlanService.ActivateAsync(id);
             if (result)
                 TempData["successMessage"] = "Plan Status Changed";
             else
-                TempData["errorMessage"] = "Failed To Change Plan Status";
+                TempData["errorMessage"] = "Failed To Change Plan Status (Check if there is a member with this Plan)";
 
             return RedirectToAction(nameof(Index));
         }

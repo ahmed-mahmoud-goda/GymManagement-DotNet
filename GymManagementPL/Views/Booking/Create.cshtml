@@ -1,0 +1,73 @@
+﻿@model CreateBookingViewModel
+@{
+    ViewData["Title"] = "Create New Booking";
+}
+
+<h1>Create New Booking</h1>
+
+<hr />
+@if (TempData["errorMessage"] != null)
+{
+    <div id="Alert" class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @TempData["errorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+<div class="row">
+    <div class="d-flex justify-content-center align-items-center h-100">
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Booking Information</h5>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Member</label>
+                            <input asp-for="SessionId" value="@ViewBag.SessionId" type="hidden" class="form-control" />
+                            <select asp-for="MemberId" asp-items="ViewBag.Members" class="form-select">
+                                <option value="">-- Select Member --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Booking
+                            </button>
+                            <a asp-action="GetMembersForUpcomingSession" asp-route-id="@ViewBag.SessionId" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script src="../js/jquery.validate.min.js"></script>
+<script src="../js/jquery.validate.unobtrusive.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#MemberId').select2({
+            placeholder: "Select a member",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const alertBox = document.getElementById("Alert");
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.transition = "opacity 0.5s ease";
+                alertBox.style.opacity = "0";
+                setTimeout(() => alertBox.remove(), 500);
+            }, 1500);
+        }
+    });
+</script>

@@ -15,27 +15,27 @@ namespace GymManagementPL.Controllers
         {
             _serviceManager = serviceManager;
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var sessions = _serviceManager.SessionService.GetAllSessions();
+            var sessions = await _serviceManager.SessionService.GetAllSessionsAsync();
             return View(sessions);
         }
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            LoadCategoriesDropDown();
-            LoadTrainersDropDown();
+            await LoadCategoriesDropDown();
+            await LoadTrainersDropDown();
             return View();
         }
         [HttpPost]
-        public IActionResult Create(CreateSessionViewModel input)
+        public async Task<IActionResult> Create(CreateSessionViewModel input)
         {
             if (!ModelState.IsValid)
             {
-                LoadCategoriesDropDown();
-                LoadTrainersDropDown();
+                await LoadCategoriesDropDown();
+                await LoadTrainersDropDown();
                 return View();
             }
-            var result = _serviceManager.SessionService.CreateSession(input);
+            var result = await _serviceManager.SessionService.CreateSessionAsync(input);
             if (result)
             {
                 TempData["successMessage"] = "Session Created Successfully";
@@ -47,14 +47,14 @@ namespace GymManagementPL.Controllers
                 return View(input);
             }
         }
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)
             {
                 TempData["errorMessage"] = "Id Of Session Can Not Be 0 Or Negative";
                 return RedirectToAction(nameof(Index));
             }
-            var session = _serviceManager.SessionService.GetSessionById(id);
+            var session = await _serviceManager.SessionService.GetSessionByIdAsync(id);
             if(session is null)
             {
                 TempData["errorMessage"] = "Session Not Found";
@@ -62,59 +62,59 @@ namespace GymManagementPL.Controllers
             }
             return View(session);
         }
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
             {
                 TempData["errorMessage"] = "Id Of Session Can Not Be 0 Or Negative";
                 return RedirectToAction(nameof(Index));
             }
-            var session = _serviceManager.SessionService.GetSessionToUpdate(id);
+            var session = await _serviceManager.SessionService.GetSessionToUpdateAsync(id);
             if (session == null)
             {
                 TempData["errorMessage"] = "Session Can Not Be Updated";
                 return RedirectToAction(nameof(Index));
             }
-            LoadTrainersDropDown();
+            await LoadTrainersDropDown();
             return View(session);
         }
         [HttpPost]
-        public IActionResult Edit([FromRoute] int id, UpdateSessionViewModel input)
+        public async Task<IActionResult> Edit([FromRoute] int id, UpdateSessionViewModel input)
         {
             if (!ModelState.IsValid)
             {
-                LoadTrainersDropDown();
+                await LoadTrainersDropDown();
                 return View(input);
             }
-            var result = _serviceManager.SessionService.UpdateSession(id, input);
+            var result = await _serviceManager.SessionService.UpdateSessionAsync(id, input);
             if (result)
                 TempData["successMessage"] = "Session Updated Successfully";
             else
-                TempData["errorMessage"] = "Failed To Update Session (You can't update ongoing and completed sessions)";
+                TempData["errorMessage"] = "Failed To Update Session (You can't update ongoing, completed or booked sessions)";
 
             return RedirectToAction(nameof(Index));
         }
         [HttpPost]
-        public IActionResult Delete([FromForm] int id)
+        public async Task<IActionResult> Delete([FromForm] int id)
         {
-            var result = _serviceManager.SessionService.RemoveSession(id);
+            var result = await _serviceManager.SessionService.RemoveSessionAsync(id);
             if (result)
                 TempData["successMessage"] = "Session Deleted Successfully";
             else
-                TempData["errorMessage"] = "Session Failed To Delete (You can't delete ongoing sessions)";
+                TempData["errorMessage"] = "Session Failed To Delete (You can't delete ongoing sessions or booked sessions)";
             return RedirectToAction(nameof(Index));
 
         }
 
         #region Helper Methods
-        public void LoadCategoriesDropDown()
+        public async Task LoadCategoriesDropDown()
         {
-            var categories = _serviceManager.SessionService.GetCategoriesDropDown();
+            var categories = await _serviceManager.SessionService.GetCategoriesDropDownAsync();
             ViewBag.Categories = new SelectList(categories, "Id", "CategoryName");
         }
-        public void LoadTrainersDropDown()
+        public async Task LoadTrainersDropDown()
         {
-            var trainers = _serviceManager.SessionService.GetTrainerDropDown();
+            var trainers = await _serviceManager.SessionService.GetTrainerDropDownAsync();
             ViewBag.Trainers = new SelectList(trainers, "Id", "Name");
         }
         #endregion

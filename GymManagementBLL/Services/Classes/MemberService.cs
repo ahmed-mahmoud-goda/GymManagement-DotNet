@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
+using GymManagementBLL.Services.Specifications;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
@@ -23,32 +24,29 @@ namespace GymManagementBLL.Services.Classes
             _mapper = mapper;
         }
 
-        public IEnumerable<MemberViewModel> GetAllMembers()
+        public async Task<IEnumerable<MemberViewModel>> GetAllMembersAsync()
         {
-            var members = _unitOfWork.GetRepository<Member>().GetAll().ToList() ?? [];
+            var members = await _unitOfWork.GetRepository<Member>().GetAllAsync();
 
-            if (members is null || !members.Any())
-                return [];
-
-            var memberViewModels = _mapper.Map<IEnumerable<Member>, IEnumerable<MemberViewModel>>(members);
+            var memberViewModels = _mapper.Map<IEnumerable<MemberViewModel>>(members);
 
             return memberViewModels;
         }
 
-        public bool CreateMember(CreateMemberViewModel model)
+        public async Task<bool> CreateMemberAsync(CreateMemberViewModel model)
         {
             try
             {
-                if(IsEmailExists(model.Email)||IsPhoneExists(model.Phone))
+                if(await IsEmailOrPhoneExistsAsync(model.Email,model.Phone))
                     return false;
 
                 var member = _mapper.Map<Member>(model);
 
-                member.Photo = GetPhoto(model.PhotoFile);
+                member.Photo = await GetPhoto(model.PhotoFile);
 
-                _unitOfWork.GetRepository<Member>().Add(member);
+                await _unitOfWork.GetRepository<Member>().AddAsync(member);
 
-                _unitOfWork.SaveChanges();
+                await _unitOfWork.SaveChangesAsync();
 
                 return true;
             }
@@ -58,20 +56,22 @@ namespace GymManagementBLL.Services.Classes
             }
         }
 
-        public MemberViewModel? GetMemberDetails(int memberId)
+        public async Task<MemberViewModel?> GetMemberDetailsAsync(int memberId)
         {
-            var member = _unitOfWork.GetRepository<Member>().GetById(memberId);
+            var member = await _unitOfWork.GetRepository<Member>().GetByIdAsync(memberId);
 
             if (member is null)
                 return null;
 
             var memberViewModel = _mapper.Map<MemberViewModel>(member);
 
-            var activeMembership = _unitOfWork.GetRepository<Membership>().GetAll(x => x.MemberId == memberId && x.Status == "Active").FirstOrDefault();
+            var membershipSpecs = new MembershipWithFilterSpecification(true,member.Id);
+
+            var activeMembership = await _unitOfWork.GetRepository<Membership>().GetBySpecificationAsync(membershipSpecs);
             
             if(activeMembership is not null)
             {
-                var activePlan = _unitOfWork.GetRepository<Plan>().GetById(activeMembership.PlanId);
+                var activePlan = await _unitOfWork.GetRepository<Plan>().GetByIdAsync(activeMembership.PlanId);
 
                 memberViewModel.PlanName = activePlan?.Name;
                 memberViewModel.MembershipStartDate = activeMembership.CreatedAt.ToShortDateString();
@@ -80,18 +80,18 @@ namespace GymManagementBLL.Services.Classes
             return memberViewModel;
         }
 
-        public HealthRecordViewModel? GetMemberHealthRecord(int memberId)
+        public async Task<HealthRecordViewModel?> GetMemberHealthRecordAsync(int memberId)
         {
-            var memberHealthRecord = _unitOfWork.GetRepository<HealthRecord>().GetById(memberId);
+            var memberHealthRecord = await _unitOfWork.GetRepository<HealthRecord>().GetByIdAsync(memberId);
 
             if(memberHealthRecord is null) return null;
 
             return _mapper.Map<HealthRecordViewModel>(memberHealthRecord);
         }
 
-        public MemberToUpdateViewModel? GetMemberToUpdate(int memberId)
+        public async Task<MemberToUpdateViewModel?> GetMemberToUpdateAsync(int memberId)
         {
-            var member = _unitOfWork.GetRepository<Member>().GetById(memberId);
+            var member = await _unitOfWork.GetRepository<Member>().GetByIdAsync(memberId);
             
             if(member is null) return null;
 
@@ -100,16 +100,16 @@ namespace GymManagementBLL.Services.Classes
             return memberToUpdate;
         }
 
-        public bool UpdateMemberDetails(int memberId,MemberToUpdateViewModel model)
+        public async Task<bool> UpdateMemberDetailsAsync(int memberId,MemberToUpdateViewModel model)
         {
-            var member = _unitOfWork.GetRepository<Member>().GetById(memberId);
+            var member = await _unitOfWork.GetRepository<Member>().GetByIdAsync(memberId);
 
             if(member is null) return false;
 
-            if (IsEmailExists(model.Email,memberId) || IsPhoneExists(model.Phone,memberId))
+            if (await IsEmailOrPhoneExistsAsync(model.Email,model.Phone,memberId))
                 return false;
 
-            var newPhoto = GetPhoto(model.PhotoFile);
+            var newPhoto = await GetPhoto(model.PhotoFile);
 
             if (newPhoto != null)
             {
@@ -120,25 +120,27 @@ namespace GymManagementBLL.Services.Classes
             _mapper.Map(model, member);
 
             _unitOfWork.GetRepository<Member>().Update(member);
-            _unitOfWork.SaveChanges();
+            await _unitOfWork.SaveChangesAsync();
 
             return true;
         }
 
-        public bool RemoveMember(int memberId)
+        public async Task<bool> RemoveMemberAsync(int memberId)
         {
-            var member = _unitOfWork.GetRepository<Member>().GetById(memberId);
+            var member = await _unitOfWork.GetRepository<Member>().GetByIdAsync(memberId);
 
             if(member is null) return false;
 
-            var activeBooking = _unitOfWork.GetRepository<Booking>().GetAll(x=>x.MemberId == memberId && x.Session.StartDate > DateTime.Now);
+            var bookingSpecs = new BookingWithFilterSpecification(memberId);
+            var activeBooking = await _unitOfWork.GetRepository<Booking>().GetAllAsync(bookingSpecs);
 
             if (activeBooking.Any())
             {
                 return false;
             }
 
-            var memberships = _unitOfWork.GetRepository<Membership>().GetAll(x => x.MemberId == memberId);
+            var membershipSpecs = new MembershipWithFilterSpecification(false,memberId);
+            var memberships = await _unitOfWork.GetRepository<Membership>().GetAllAsync(membershipSpecs);
 
             try
             {
@@ -148,7 +150,7 @@ namespace GymManagementBLL.Services.Classes
                 }
                 DeletePhoto(member.Photo);
                 _unitOfWork.GetRepository<Member>().Delete(member);
-                _unitOfWork.SaveChanges();
+                await _unitOfWork.SaveChangesAsync();
 
                 return true;
             }
@@ -160,17 +162,13 @@ namespace GymManagementBLL.Services.Classes
 
         #region Helper Methods
 
-        private bool IsEmailExists(string email,int? id = null)
+        private async Task<bool> IsEmailOrPhoneExistsAsync(string email, string phone,int? id = null)
         {
-            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Email == email && x.Id != id);
-            return existingMember is not null && existingMember.Any();
+            var memberSpecs = new MemberWithFilterSpecification(email,phone,id);
+            var existingMember = await _unitOfWork.GetRepository<Member>().GetBySpecificationAsync(memberSpecs);
+            return existingMember != null;
         }
-        private bool IsPhoneExists(string phone,int? id = null)
-        {
-            var existingMember = _unitOfWork.GetRepository<Member>().GetAll(x => x.Phone == phone && x.Id != id);
-            return existingMember is not null && existingMember.Any();
-        }
-        private string? GetPhoto(IFormFile? file)
+        private async Task<string?> GetPhoto(IFormFile? file)
         {
             if (file == null || file.Length == 0)
                 return null;
@@ -188,7 +186,7 @@ namespace GymManagementBLL.Services.Classes
             string fullPath = Path.Combine(folder, fileName);
 
             using var stream = new FileStream(fullPath, FileMode.Create);
-            file.CopyTo(stream);
+            await file.CopyToAsync(stream);
 
             return "/images/members/" + fileName;
         }
