@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
@@ -9,6 +10,7 @@ using GymManagementBLL.Services.Specifications;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -16,11 +18,14 @@ namespace GymManagementBLL.Services.Classes
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDistributedCache _cache;
+        private const string cacheKey = "plans";
 
-        public PlanService(IUnitOfWork unitOfWork, IMapper mapper)
+        public PlanService(IUnitOfWork unitOfWork, IMapper mapper, IDistributedCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<bool> ActivateAsync(int planId)
@@ -34,17 +39,30 @@ namespace GymManagementBLL.Services.Classes
             plan.UpdatedAt = DateTime.Now;
 
             _unitOfWork.GetRepository<Plan>().Update(plan);
+            await _cache.RemoveAsync(cacheKey);
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
         public async Task<IEnumerable<PlanViewModel>> GetAllPlansAsync()
         {
+            var cached = await _cache.GetStringAsync(cacheKey);
+
+            if (!string.IsNullOrEmpty(cached))
+                return JsonSerializer.Deserialize<IEnumerable<PlanViewModel>>(cached)!;
+
             var plans = await _unitOfWork.GetRepository<Plan>().GetAllAsync();
 
             if (plans is null || !plans.Any())
                 return [];
 
             var mappedPlans = _mapper.Map<IEnumerable<PlanViewModel>>(plans);
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+            };
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedPlans), cacheOptions);
+
 
             return mappedPlans;
         }
@@ -83,6 +101,8 @@ namespace GymManagementBLL.Services.Classes
             _mapper.Map(input, plan);
 
             _unitOfWork.GetRepository<Plan>().Update(plan);
+
+            await _cache.RemoveAsync(cacheKey);
 
             return (await _unitOfWork.SaveChangesAsync()) > 0; 
         }
