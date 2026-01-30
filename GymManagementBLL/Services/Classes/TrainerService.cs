@@ -1,9 +1,11 @@
-﻿using AutoMapper;
+﻿using System.Text.Json;
+using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
 using GymManagementBLL.Services.Specifications;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -11,18 +13,33 @@ namespace GymManagementBLL.Services.Classes
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDistributedCache _cache;
+        private const string cacheKey = "trainers";
 
-        public TrainerService(IUnitOfWork unitOfWork,IMapper mapper)
+        public TrainerService(IUnitOfWork unitOfWork,IMapper mapper, IDistributedCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<TrainerViewModel>> GetAllTrainersAsync()
         {
+            var cached = await _cache.GetStringAsync(cacheKey);
+
+            if (!string.IsNullOrEmpty(cached))
+                return JsonSerializer.Deserialize<IEnumerable<TrainerViewModel>>(cached)!;
+
             var trainers = await _unitOfWork.GetRepository<Trainer>().GetAllAsync();
 
             var trainerViewModels = _mapper.Map<IEnumerable<TrainerViewModel>>(trainers);
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+            };
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(trainerViewModels), cacheOptions);
+
 
             return trainerViewModels;
         }
@@ -50,7 +67,7 @@ namespace GymManagementBLL.Services.Classes
                 await _unitOfWork.GetRepository<Trainer>().AddAsync(trainer);
 
                 await _unitOfWork.SaveChangesAsync();
-
+                await _cache.RemoveAsync(cacheKey);
                 return true;
             }
             catch
@@ -82,6 +99,7 @@ namespace GymManagementBLL.Services.Classes
             _mapper.Map(model,trainer);
 
             _unitOfWork.GetRepository<Trainer>().Update(trainer);
+            await _cache.RemoveAsync(cacheKey);
             await _unitOfWork.SaveChangesAsync();
 
             return true;
@@ -103,7 +121,7 @@ namespace GymManagementBLL.Services.Classes
 
             _unitOfWork.GetRepository<Trainer>().Delete(trainer);
             await _unitOfWork.SaveChangesAsync();
-
+            await _cache.RemoveAsync(cacheKey);
             return true;
         }
 

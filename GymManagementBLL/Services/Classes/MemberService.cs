@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
@@ -10,6 +11,7 @@ using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -17,18 +19,32 @@ namespace GymManagementBLL.Services.Classes
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-
-        public MemberService(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IDistributedCache _cache;
+        private const string cacheKey = "members";
+        public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IDistributedCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<MemberViewModel>> GetAllMembersAsync()
         {
+            var cached = await _cache.GetStringAsync(cacheKey);
+
+            if (!string.IsNullOrEmpty(cached))
+                return JsonSerializer.Deserialize<IEnumerable<MemberViewModel>>(cached)!;
+
             var members = await _unitOfWork.GetRepository<Member>().GetAllAsync();
 
             var memberViewModels = _mapper.Map<IEnumerable<MemberViewModel>>(members);
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            };
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(memberViewModels), cacheOptions);
+
 
             return memberViewModels;
         }
@@ -47,6 +63,7 @@ namespace GymManagementBLL.Services.Classes
                 await _unitOfWork.GetRepository<Member>().AddAsync(member);
 
                 await _unitOfWork.SaveChangesAsync();
+                await _cache.RemoveAsync(cacheKey);
 
                 return true;
             }
@@ -121,7 +138,7 @@ namespace GymManagementBLL.Services.Classes
 
             _unitOfWork.GetRepository<Member>().Update(member);
             await _unitOfWork.SaveChangesAsync();
-
+            await _cache.RemoveAsync(cacheKey);
             return true;
         }
 
@@ -151,7 +168,7 @@ namespace GymManagementBLL.Services.Classes
                 DeletePhoto(member.Photo);
                 _unitOfWork.GetRepository<Member>().Delete(member);
                 await _unitOfWork.SaveChangesAsync();
-
+                await _cache.RemoveAsync(cacheKey);
                 return true;
             }
             catch

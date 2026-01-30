@@ -8,6 +8,7 @@ using GymManagementBLL.Services.Interfaces;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -22,12 +23,12 @@ namespace GymManagementBLL.Services.Classes
         private readonly Lazy<IMembershipService> membershipService;
         private readonly Lazy<IBookingService> bookingService;
 
-        public ServiceManager(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager)
+        public ServiceManager(IUnitOfWork unitOfWork, IMapper mapper, UserManager<ApplicationUser> userManager, IDistributedCache  cache )
         {
-            memberService = new Lazy<IMemberService>(() => new MemberService(unitOfWork,mapper));
-            trainerService = new Lazy<ITrainerService>(() => new TrainerService(unitOfWork,mapper));
-            planService = new Lazy<IPlanService>(() => new PlanService(unitOfWork,mapper));
-            sessionService = new Lazy<ISessionService>(() => new SessionService(unitOfWork,mapper));
+            memberService = new Lazy<IMemberService>(() => new MemberService(unitOfWork,mapper,cache));
+            trainerService = new Lazy<ITrainerService>(() => new TrainerService(unitOfWork,mapper,cache));
+            planService = new Lazy<IPlanService>(() => new PlanService(unitOfWork,mapper,cache));
+            sessionService = new Lazy<ISessionService>(() => new SessionService(unitOfWork,mapper,cache));
             analyticsService = new Lazy<IAnalyticsService>(()=> new AnalyticsService(unitOfWork));
             accountService = new Lazy<IAccountService>(() => new AccountService(userManager));
             membershipService = new Lazy<IMembershipService>(() => new MembershipService(unitOfWork,mapper));

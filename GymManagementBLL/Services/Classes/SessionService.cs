@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
 using GymManagementBLL.Services.Interfaces;
@@ -9,6 +10,7 @@ using GymManagementBLL.Services.Specifications;
 using GymManagementBLL.ViewModels;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace GymManagementBLL.Services.Classes
 {
@@ -16,14 +18,22 @@ namespace GymManagementBLL.Services.Classes
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IDistributedCache _cache;
+        private const string cacheKey = "sessions";
 
-        public SessionService(IUnitOfWork unitOfWork, IMapper mapper)
+        public SessionService(IUnitOfWork unitOfWork, IMapper mapper, IDistributedCache cache)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _cache = cache;
         }
         public async Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync()
         {
+            var cached = await _cache.GetStringAsync(cacheKey);
+
+            if (!string.IsNullOrEmpty(cached))
+                return JsonSerializer.Deserialize<IEnumerable<SessionViewModel>>(cached)!;
+
             var sessionSpecs = new SessionWithFilterSpecification();
             var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
 
@@ -37,6 +47,14 @@ namespace GymManagementBLL.Services.Classes
                 var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
                 session.AvailableSlots = session.Capacity - await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs);
             }
+
+            var cacheOptions = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15),
+                SlidingExpiration = TimeSpan.FromMinutes(5)
+            };
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedSessions), cacheOptions);
+
 
             return mappedSessions;
         }
@@ -64,6 +82,7 @@ namespace GymManagementBLL.Services.Classes
 
             var session = _mapper.Map<CreateSessionViewModel, Session>(input);
             await _unitOfWork.GetRepository<Session>().AddAsync(session);
+            await _cache.RemoveAsync(cacheKey);
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
@@ -78,6 +97,7 @@ namespace GymManagementBLL.Services.Classes
             session.UpdatedAt = DateTime.UtcNow;
 
             _unitOfWork.GetRepository<Session>().Update(session);
+            await _cache.RemoveAsync(cacheKey);
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
@@ -99,6 +119,7 @@ namespace GymManagementBLL.Services.Classes
                 return false;
 
             _unitOfWork.GetRepository<Session>().Delete(session);
+            await _cache.RemoveAsync(cacheKey);
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
         public async Task<IEnumerable<CategorySelectViewModel>> GetCategoriesDropDownAsync()
@@ -154,7 +175,7 @@ namespace GymManagementBLL.Services.Classes
 
             var bookingSpecs = new BookingWithFilterSpecification(false, sessionId: session.Id);
             var hasActiveBookings = (await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs)) > 0;
-            if (hasActiveBookings)
+            if (hasActiveBookings && session.EndDate>DateTime.UtcNow)
                 return false;
 
             return true;
