@@ -23,12 +23,19 @@ namespace GymManagementBLL.Services.Specifications
 
         public SessionWithFilterSpecification(int trainerId): base(x => x.TrainerId == trainerId && x.StartDate > DateTime.Now) { }
 
-        public SessionWithFilterSpecification(): base()
+        public SessionWithFilterSpecification(bool isChanged = false): base(
+            s => !isChanged
+                || (s.StartDate <= DateTime.Now && s.StartDate > DateTime.Now.AddMinutes(-1))
+                || (s.EndDate <= DateTime.Now && s.EndDate > DateTime.Now.AddMinutes(-1))
+            )
         {
-            AddInclude(s => s.Trainer);
             AddInclude(s => s.Category);
-            AddInclude(s => s.SessionMembers);
-            setOrderByDescending(s => s.StartDate);
+            AddInclude(s => s.Trainer);
+            if (!isChanged)
+            {
+                AddInclude(s => s.SessionMembers);
+                setOrderByDescending(s => s.StartDate);
+            }
         }
 
         public SessionWithFilterSpecification(int sessionId, bool addInclude = true) : base(s => s.Id == sessionId)
@@ -38,7 +45,6 @@ namespace GymManagementBLL.Services.Specifications
                 AddInclude(s => s.Trainer);
                 AddInclude(s => s.Category);
             }
-            setOrderByDescending(s => s.StartDate);
         }
     }
 }

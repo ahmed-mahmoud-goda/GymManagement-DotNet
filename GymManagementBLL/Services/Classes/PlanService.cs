@@ -39,16 +39,25 @@ namespace GymManagementBLL.Services.Classes
             plan.UpdatedAt = DateTime.Now;
 
             _unitOfWork.GetRepository<Plan>().Update(plan);
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
         public async Task<IEnumerable<PlanViewModel>> GetAllPlansAsync()
         {
-            var cached = await _cache.GetStringAsync(cacheKey);
-
-            if (!string.IsNullOrEmpty(cached))
-                return JsonSerializer.Deserialize<IEnumerable<PlanViewModel>>(cached)!;
+            try { 
+                var cached = await _cache.GetStringAsync(cacheKey);
+                if (!string.IsNullOrEmpty(cached))
+                    return JsonSerializer.Deserialize<IEnumerable<PlanViewModel>>(cached)!;
+             }
+            catch
+            {
+                Console.WriteLine("Redis is Unavailable");
+            }
 
             var plans = await _unitOfWork.GetRepository<Plan>().GetAllAsync();
 
@@ -57,11 +66,15 @@ namespace GymManagementBLL.Services.Classes
 
             var mappedPlans = _mapper.Map<IEnumerable<PlanViewModel>>(plans);
 
-            var cacheOptions = new DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
-            };
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedPlans), cacheOptions);
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15)
+                };
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedPlans), cacheOptions);
+            }
+            catch { }
 
 
             return mappedPlans;
@@ -102,7 +115,11 @@ namespace GymManagementBLL.Services.Classes
 
             _unitOfWork.GetRepository<Plan>().Update(plan);
 
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
 
             return (await _unitOfWork.SaveChangesAsync()) > 0; 
         }

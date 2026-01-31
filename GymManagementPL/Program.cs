@@ -1,4 +1,5 @@
 using AutoMapper;
+using GymManagementBLL.MappingProfiles;
 using GymManagementBLL.Services.Classes;
 using GymManagementBLL.Services.Interfaces;
 using GymManagementDAL.Data.Contexts;
@@ -6,6 +7,8 @@ using GymManagementDAL.Data.DataSeed;
 using GymManagementDAL.Data.Repositories.Classes;
 using GymManagementDAL.Data.Repositories.Interfaces;
 using GymManagementDAL.Entities;
+using GymManagementPL.BackgroundServices;
+using GymManagementPL.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,7 +40,12 @@ namespace GymManagementPL
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<GymDbContext>();
 
-            builder.Services.AddAutoMapper(option=> { },AppDomain.CurrentDomain.GetAssemblies());
+            builder.Services.AddAutoMapper(option=> { },typeof(MemberProfile).Assembly);
+
+            builder.Services.AddSignalR();
+
+            builder.Services.AddHostedService<SessionStatusNotifier>();
+
 
             var app = builder.Build();
 
@@ -68,6 +76,8 @@ namespace GymManagementPL
             app.UseAuthentication();
             app.UseAuthorization();
 
+
+            app.MapHub<SessionHub>("/sessionHub");
             app.MapStaticAssets();
             app.MapControllerRoute(
                 name: "default",

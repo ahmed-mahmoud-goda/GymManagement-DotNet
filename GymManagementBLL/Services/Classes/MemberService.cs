@@ -30,21 +30,30 @@ namespace GymManagementBLL.Services.Classes
 
         public async Task<IEnumerable<MemberViewModel>> GetAllMembersAsync()
         {
-            var cached = await _cache.GetStringAsync(cacheKey);
+            try
+            {
+                var cached = await _cache.GetStringAsync(cacheKey);
 
-            if (!string.IsNullOrEmpty(cached))
-                return JsonSerializer.Deserialize<IEnumerable<MemberViewModel>>(cached)!;
-
+                if (!string.IsNullOrEmpty(cached))
+                    return JsonSerializer.Deserialize<IEnumerable<MemberViewModel>>(cached)!;
+            }
+            catch
+            {
+                Console.WriteLine("Redis is Unavailable");
+            }
             var members = await _unitOfWork.GetRepository<Member>().GetAllAsync();
 
             var memberViewModels = _mapper.Map<IEnumerable<MemberViewModel>>(members);
 
-            var cacheOptions = new DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-            };
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(memberViewModels), cacheOptions);
-
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+                };
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(memberViewModels), cacheOptions);
+            }
+            catch { }
 
             return memberViewModels;
         }
@@ -63,8 +72,11 @@ namespace GymManagementBLL.Services.Classes
                 await _unitOfWork.GetRepository<Member>().AddAsync(member);
 
                 await _unitOfWork.SaveChangesAsync();
-                await _cache.RemoveAsync(cacheKey);
-
+                try
+                {
+                    await _cache.RemoveAsync(cacheKey);
+                }
+                catch { }
                 return true;
             }
             catch
@@ -138,7 +150,11 @@ namespace GymManagementBLL.Services.Classes
 
             _unitOfWork.GetRepository<Member>().Update(member);
             await _unitOfWork.SaveChangesAsync();
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
             return true;
         }
 
@@ -168,7 +184,11 @@ namespace GymManagementBLL.Services.Classes
                 DeletePhoto(member.Photo);
                 _unitOfWork.GetRepository<Member>().Delete(member);
                 await _unitOfWork.SaveChangesAsync();
-                await _cache.RemoveAsync(cacheKey);
+                try
+                {
+                    await _cache.RemoveAsync(cacheKey);
+                }
+                catch { }
                 return true;
             }
             catch

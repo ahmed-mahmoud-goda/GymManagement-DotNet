@@ -10,6 +10,7 @@ namespace GymManagementBLL.Services.Interfaces
     public interface ISessionService
     {
         Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync(); 
+        Task<IEnumerable<SessionViewModel>> GetChangingSessionsAsync();
         Task<SessionViewModel?> GetSessionByIdAsync(int sessionId);
         Task<bool> CreateSessionAsync(CreateSessionViewModel input);
         Task<bool> UpdateSessionAsync(int id,UpdateSessionViewModel input);
