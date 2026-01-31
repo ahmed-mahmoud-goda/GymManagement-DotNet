@@ -75,6 +75,7 @@
     </nav>
 
   </header>
+    <div id="toastContainer" class="position-fixed top-0 end-0 p-3" style="z-index:99;"></div>
   <div class="container">
     <main role="main" class="pb-3">
       @RenderBody()
@@ -84,6 +85,8 @@
   <script src="~/lib/jquery/dist/jquery.js"></script>
   <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="~/js/site.js" asp-append-version="true"></script>
+  <script src="~/microsoft-signalr/signalr.min.js"></script>
+  <script src="~/js/sessionNotifier.js"></script>
   @await RenderSectionAsync("Scripts",required:false)
 </body>
 

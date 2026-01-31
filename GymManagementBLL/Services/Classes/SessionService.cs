@@ -29,11 +29,17 @@ namespace GymManagementBLL.Services.Classes
         }
         public async Task<IEnumerable<SessionViewModel>> GetAllSessionsAsync()
         {
-            var cached = await _cache.GetStringAsync(cacheKey);
+            try
+            {
+                var cached = await _cache.GetStringAsync(cacheKey);
 
-            if (!string.IsNullOrEmpty(cached))
-                return JsonSerializer.Deserialize<IEnumerable<SessionViewModel>>(cached)!;
-
+                if (!string.IsNullOrEmpty(cached))
+                    return JsonSerializer.Deserialize<IEnumerable<SessionViewModel>>(cached)!;
+            }
+            catch
+            {
+                Console.WriteLine("Redis is Unavailable");
+            }
             var sessionSpecs = new SessionWithFilterSpecification();
             var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
 
@@ -48,14 +54,28 @@ namespace GymManagementBLL.Services.Classes
                 session.AvailableSlots = session.Capacity - await _unitOfWork.GetRepository<Booking>().CountAsync(bookingSpecs);
             }
 
-            var cacheOptions = new DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15),
-                SlidingExpiration = TimeSpan.FromMinutes(5)
-            };
-            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedSessions), cacheOptions);
+                var cacheOptions = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15),
+                    SlidingExpiration = TimeSpan.FromMinutes(5)
+                };
+                await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(mappedSessions), cacheOptions);
+            }
+            catch { }
 
+            return mappedSessions;
+        }
+        public async Task<IEnumerable<SessionViewModel>> GetChangingSessionsAsync()
+        {
+            var sessionSpecs = new SessionWithFilterSpecification(true);
+            var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
 
+            if (sessions is null || !sessions.Any())
+                return [];
+
+            var mappedSessions = _mapper.Map<IEnumerable<SessionViewModel>>(sessions);
             return mappedSessions;
         }
 
@@ -82,7 +102,11 @@ namespace GymManagementBLL.Services.Classes
 
             var session = _mapper.Map<CreateSessionViewModel, Session>(input);
             await _unitOfWork.GetRepository<Session>().AddAsync(session);
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
@@ -97,7 +121,11 @@ namespace GymManagementBLL.Services.Classes
             session.UpdatedAt = DateTime.UtcNow;
 
             _unitOfWork.GetRepository<Session>().Update(session);
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
 
@@ -119,7 +147,11 @@ namespace GymManagementBLL.Services.Classes
                 return false;
 
             _unitOfWork.GetRepository<Session>().Delete(session);
-            await _cache.RemoveAsync(cacheKey);
+            try
+            {
+                await _cache.RemoveAsync(cacheKey);
+            }
+            catch { }
             return (await _unitOfWork.SaveChangesAsync()) > 0;
         }
         public async Task<IEnumerable<CategorySelectViewModel>> GetCategoriesDropDownAsync()

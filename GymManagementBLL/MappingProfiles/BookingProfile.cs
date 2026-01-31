@@ -10,7 +10,7 @@ using GymManagementDAL.Entities;
 
 namespace GymManagementBLL.MappingProfiles
 {
-    internal class BookingProfile : Profile
+    public class BookingProfile : Profile
     {
         public BookingProfile()
         {

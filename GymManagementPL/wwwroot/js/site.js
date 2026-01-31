@@ -1,4 +1,15 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
+﻿document.addEventListener("DOMContentLoaded", function () {
+    const alertBox = document.getElementById("Alert");
+    if (alertBox) {
+        setTimeout(() => {
+            alertBox.style.transition = "opacity 0.5s ease";
+            alertBox.style.opacity = "0";
+            setTimeout(() => alertBox.remove(), 500);
+        }, 1500);
+    }
+});
+document.getElementById('deleteModal')
+    .addEventListener('show.bs.modal', function (e) {
+        document.getElementById('deleteId').value =
+            e.relatedTarget.getAttribute('data-id');
+    });
