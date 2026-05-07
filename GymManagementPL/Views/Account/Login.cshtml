@@ -36,10 +36,34 @@
                 @Html.ValidationMessage("InvalidLogin", new { @class = "text-danger" })
 
                 <!-- Demo Accounts start-->
-                <div class="alert alert-info small" role="alert">
-                    <strong>Demo Login</strong><br />
-                    SuperAdmin: superadmin@gmail.com / Password@123<br />
-                    Admin: admin@gmail.com / Password@123
+                <div class="border rounded-3 p-2 mb-3 bg-light small">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                        <strong class="text-primary small">Demo Accounts</strong>
+                    </div>
+
+                    <div class="row g-2">
+
+                        <div class="col-6">
+                            <div class="border rounded-2 p-2 bg-white h-100">
+                                <span class="badge bg-danger mb-1">Super Admin</span>
+                                <div class="text-muted" style="font-size: 12px;">
+                                    <div><i class="bi bi-envelope me-1"></i> superadmin@gmail.com</div>
+                                    <div><i class="bi bi-key me-1"></i> Password@123</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded-2 p-2 bg-white h-100">
+                                <span class="badge bg-primary mb-1">Admin</span>
+                                <div class="text-muted" style="font-size: 12px;">
+                                    <div><i class="bi bi-envelope me-1"></i> admin@gmail.com</div>
+                                    <div><i class="bi bi-key me-1"></i> Password@123</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
                 <!-- Demo Accounts end-->
 
