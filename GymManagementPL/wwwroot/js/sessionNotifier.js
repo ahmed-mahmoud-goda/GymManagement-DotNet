@@ -9,7 +9,8 @@ connection.on("SessionStatusChanged", function (data) {
 });
 
 connection.start()
-    .catch(err => console.log(err));
+    .then(() => console.log("SignalR connected"))
+    .catch(err => console.error("SignalR error:", err));
 
 
 function showNotification(title, message) {

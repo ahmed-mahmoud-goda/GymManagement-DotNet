@@ -19,8 +19,8 @@
     </div>
 }
 
-<div class="container">
-    <header class="d-flex justify-content-end mt-5 mb-4 align-items-center">
+<div class="container-fluid">
+    <header class="d-flex justify-content-end mt-3 mt-lg-5 mb-3 mb-lg-4 align-items-center w-100">
         <a asp-controller="Member" asp-action="Create" class="btn btn-fill fw-medium rounded-pill px-3 py-3">
             + Add Member
         </a>
@@ -28,7 +28,7 @@
 
     @if(Model != null && Model.Any()){
     <div class="table-responsive " style="overflow: visible;">
-        <table class="table table-borderless">
+            <table class="table table-borderless w-100">
             <thead>
                 <tr>
                     <th><span>@nameof(MemberViewModel.Photo)</span></th>

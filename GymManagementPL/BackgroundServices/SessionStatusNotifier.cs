@@ -23,7 +23,7 @@ namespace GymManagementPL.BackgroundServices
                 var serviceManager = scope.ServiceProvider.GetRequiredService<IServiceManager>();
 
                 var sessions = await serviceManager.SessionService.GetChangingSessionsAsync();
-
+                
                 foreach (var session in sessions)
                 {
                     string status = "";

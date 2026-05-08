@@ -29,8 +29,7 @@
             overflow: hidden;
             max-width: 1000px;
             width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            margin: auto;
         }
 
         /* Left Side - Login Form */

@@ -12,9 +12,9 @@ namespace GymManagementBLL.Services.Specifications
     {
         public SessionWithFilterSpecification(string status): base(status switch
         {
-            "Upcoming" => s => s.StartDate > DateTime.UtcNow,
-            "Ongoing" => s => s.StartDate <= DateTime.UtcNow && s.EndDate >= DateTime.UtcNow,
-            "Completed" => s => s.EndDate < DateTime.UtcNow,
+            "Upcoming" => s => s.StartDate > DateTime.Now,
+            "Ongoing" => s => s.StartDate <= DateTime.Now && s.EndDate >= DateTime.Now,
+            "Completed" => s => s.EndDate < DateTime.Now,
             _ => throw new ArgumentException("Invalid session status. Use Upcoming, Ongoing or Completed")
         })
         {
@@ -23,14 +23,14 @@ namespace GymManagementBLL.Services.Specifications
 
         public SessionWithFilterSpecification(int trainerId): base(x => x.TrainerId == trainerId && x.StartDate > DateTime.Now) { }
 
-        public SessionWithFilterSpecification(bool isChanged = false): base(
-            s => !isChanged
-                || (s.StartDate <= DateTime.Now && s.StartDate > DateTime.Now.AddMinutes(-1))
-                || (s.EndDate <= DateTime.Now && s.EndDate > DateTime.Now.AddMinutes(-1))
-            )
+        public SessionWithFilterSpecification(bool isChanged=false, DateTime? currentTime = null)
+        : base(s => !isChanged ||
+          (s.StartDate <= currentTime && s.StartDate > currentTime.Value.AddMinutes(-1.5)) ||
+          (s.EndDate <= currentTime && s.EndDate > currentTime.Value.AddMinutes(-1.5)))
         {
             AddInclude(s => s.Category);
             AddInclude(s => s.Trainer);
+
             if (!isChanged)
             {
                 AddInclude(s => s.SessionMembers);

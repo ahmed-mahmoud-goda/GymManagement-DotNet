@@ -42,7 +42,7 @@ namespace GymManagementBLL.Services.Classes
             }
             var sessionSpecs = new SessionWithFilterSpecification();
             var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
-
+            
             if (sessions is null || !sessions.Any())
                 return [];
 
@@ -69,7 +69,8 @@ namespace GymManagementBLL.Services.Classes
         }
         public async Task<IEnumerable<SessionViewModel>> GetChangingSessionsAsync()
         {
-            var sessionSpecs = new SessionWithFilterSpecification(true);
+            var referenceTime = DateTime.Now;
+            var sessionSpecs = new SessionWithFilterSpecification(true, referenceTime);
             var sessions = await _unitOfWork.GetRepository<Session>().GetAllAsync(sessionSpecs);
 
             if (sessions is null || !sessions.Any())
